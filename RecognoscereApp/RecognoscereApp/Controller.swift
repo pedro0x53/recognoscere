@@ -10,11 +10,33 @@ import Recognoscere
 
 @Observable
 class Controller {
-    @ObservationIgnored static let data = DataSource(fileName: "breast", fileExtension: "csv")
+    @ObservationIgnored static let data = Sampling(fileName: "iris")
 
     func run() {
 //        self.holdOut(shouldNormalize: true)
-        self.kFold(numberOfChunks: 10, shouldNormalize: true)
+//        self.kFold(numberOfChunks: 10, shouldNormalize: true)
+        self.kNearestNeighbor()
+    }
+
+    private func kNearestNeighbor(shouldNormalize: Bool = false) {
+        Controller.data.shuffle()
+
+        if shouldNormalize {
+            Controller.data.normalize()
+        }
+
+        let trainingData = Controller.data.getTraining().matrix
+        let testingData = Controller.data.getTesting().matrix
+        
+        let knn = KNN(neighbors: testingData)
+
+        do {
+            let predictions = try knn.predict(testingData, numberOfNeighbours: 3)
+            print("Expected: \(predictions.expected)")
+            print("Actual: \(predictions.actual)")
+        } catch {
+            print(error.localizedDescription)
+        }
     }
 
     private func holdOut(shouldNormalize: Bool = false) {
@@ -34,8 +56,6 @@ class Controller {
         var kMetrics: [Metrics] = []
 
         for fold in 1...numberOfChunks {
-//            print("Fold \(fold)\n")
-
             Controller.data.normalize()
 
             let trainingData = Controller.data.getTraining(using: .kFold(10, fold))
@@ -45,8 +65,6 @@ class Controller {
 
             let metrics = self.training(trainingData: trainingData, testingData: testingData)
             kMetrics.append(metrics)
-
-//            print(metrics.description)
         }
 
         let accuracies = Matrix(matrix: [kMetrics.map{ $0.accuracy }])

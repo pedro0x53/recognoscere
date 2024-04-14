@@ -8,13 +8,12 @@
 import Foundation
 import Accelerate
 
-public class DataSource {
+public class Sampling {
     private(set) var matrix: Matrix
     
-    public init(fileName: String, fileExtension: String) {
-        // Load data from CSV file
+    public init(fileName: String) {
         do {
-            let fileURL = Bundle.main.url(forResource: fileName, withExtension: fileExtension)
+            let fileURL = Bundle.main.url(forResource: fileName, withExtension: "csv")
             let csvData = try String(contentsOf: fileURL!)
             let rows = csvData.components(separatedBy: "\n")
             var matrixData = [[Float]]()
@@ -31,7 +30,7 @@ public class DataSource {
         }
     }
     
-    public func getTraining(using method: SamplingMethod = .holdOut) -> Matrix {
+    public func getTraining(using method: Method = .holdOut) -> Matrix {
         switch method {
         case .holdOut:
             let trainingRowCount = Int(Float(matrix.rows) * 0.8)
@@ -47,7 +46,7 @@ public class DataSource {
         }
     }
     
-    public func getTesting(using method: SamplingMethod = .holdOut) -> Matrix {
+    public func getTesting(using method: Method = .holdOut) -> Matrix {
         switch method {
         case .holdOut:
             let trainingRowCount = Int(Float(matrix.rows) * 0.8)
@@ -70,10 +69,14 @@ public class DataSource {
     public func denormalize() {
         self.matrix = self.matrix.denormalize()
     }
+
+    public func shuffle() {
+        self.matrix.shuffle()
+    }
 }
 
-public extension DataSource {
-    enum SamplingMethod {
+public extension Sampling {
+    enum Method {
         case holdOut
         case kFold(Int, Int)
     }
